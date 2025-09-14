@@ -1,0 +1,10 @@
+{
+  "files": {
+    "main.js": "/sixle/static/js/main.6fad3f32.js",
+    "index.html": "/sixle/index.html",
+    "main.6fad3f32.js.map": "/sixle/static/js/main.6fad3f32.js.map"
+  },
+  "entrypoints": [
+    "static/js/main.6fad3f32.js"
+  ]
+}
