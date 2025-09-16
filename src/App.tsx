@@ -71,6 +71,21 @@ const App: React.FC = () => {
     setLetterStates({});
   };
 
+  // --- Word validation helper (local first, API fallback) ---
+  const validateWord = async (word: string): Promise<boolean> => {
+    if (allWords.includes(word)) return true;
+
+    try {
+      const res = await fetch(`https://api.dictionaryapi.dev/api/v2/entries/en/${word}`);
+      if (res.ok) return true;
+    } catch (err) {
+      console.error("Dictionary API error", err);
+      // Optional: could choose to allow word on API failure
+    }
+
+    return false;
+  };
+
   // --- Keyboard input handling ---
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -87,17 +102,21 @@ const App: React.FC = () => {
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [gameOver, revealingIndex, input, targetWord]);
 
-  const handleLetterClick = (key: string) => {
+  // --- Updated async handler ---
+  const handleLetterClick = async (key: string) => {
     if (gameOver || revealingIndex !== null) return;
     if (key === 'guess') {
       if (input.length !== 6) {
         setMessage('Guess must be 6 letters.');
         return;
       }
-      if (!allWords.includes(input)) {
+
+      const isValid = await validateWord(input);
+      if (!isValid) {
         setMessage('Not a valid word.');
         return;
       }
+
       const feedback = getFeedback(input, targetWord);
       if (!gameOver) setGuesses(prev => [...prev, input]);
       setFeedbacks(prev => [...prev, feedback]);
@@ -122,13 +141,16 @@ const App: React.FC = () => {
         setInput('');
         if (input === targetWord) {
           confetti({ particleCount: 200, spread: 70, origin: { y: 0.6 } });
+          setMessage("You got it!");
           setGameOver(true);
         } else if (guesses.length + 1 >= MAX_GUESSES) {
           document.body.classList.add('shake');
           setTimeout(() => document.body.classList.remove('shake'), 1000);
+          setMessage(`Out of guesses! The word was ${targetWord.toUpperCase()}.`);
           setGameOver(true);
         }
       }, 6 * 300 + 200);
+
       setMessage('');
       return;
     }
@@ -239,7 +261,7 @@ const App: React.FC = () => {
                   style={{
                     width: key === 'guess' || key === 'back'
                       ? 'min(20vw, 70px)'   // Enter/Back special keys
-                      : 'min(12vw, 44px)', // all regular keys (O, P, L included)
+                      : 'min(12vw, 44px)', // all regular keys
                     height: 'min(12vw, 44px)',
                     margin: '0.5vw',
                     backgroundColor: baseColor,
