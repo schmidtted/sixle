@@ -248,8 +248,8 @@ const App: React.FC = () => {
                   : bgState === 'present'
                   ? '#c9b458'
                   : bgState === 'absent'
-                  ? '#555'
-                  : '#222';
+                  ? '#000'
+                  : '#555';
 
               return (
                 <button
