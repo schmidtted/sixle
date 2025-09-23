@@ -80,7 +80,6 @@ const App: React.FC = () => {
       if (res.ok) return true;
     } catch (err) {
       console.error("Dictionary API error", err);
-      // Optional: could choose to allow word on API failure
     }
 
     return false;
@@ -105,6 +104,7 @@ const App: React.FC = () => {
   // --- Updated async handler ---
   const handleLetterClick = async (key: string) => {
     if (gameOver || revealingIndex !== null) return;
+
     if (key === 'guess') {
       if (input.length !== 6) {
         setMessage('Guess must be 6 letters.');
@@ -120,6 +120,9 @@ const App: React.FC = () => {
       const feedback = getFeedback(input, targetWord);
       if (!gameOver) setGuesses(prev => [...prev, input]);
       setFeedbacks(prev => [...prev, feedback]);
+
+      // ✅ clear input immediately (fixes flicker into next row)
+      setInput('');
 
       const newLetterStates = { ...letterStates };
       input.split('').forEach((char, idx) => {
@@ -138,7 +141,6 @@ const App: React.FC = () => {
 
       setTimeout(() => {
         setRevealingIndex(null);
-        setInput('');
         if (input === targetWord) {
           confetti({ particleCount: 200, spread: 70, origin: { y: 0.6 } });
           setMessage("You got it!");
@@ -154,10 +156,12 @@ const App: React.FC = () => {
       setMessage('');
       return;
     }
+
     if (key === 'back') {
       setInput(prev => prev.slice(0, -1));
       return;
     }
+
     if (/^[a-z]$/.test(key) && input.length < 6) {
       setInput(prev => prev + key);
     }
@@ -182,7 +186,12 @@ const App: React.FC = () => {
               const isCurrentRow = rowIdx === guesses.length;
               const letter =
                 guesses[rowIdx]?.[colIdx] ??
-                (isCurrentRow && guesses.length === feedbacks.length && revealingIndex === null ? input[colIdx] : '');
+                (isCurrentRow &&
+                  guesses.length === feedbacks.length &&
+                  revealingIndex === null &&
+                  !gameOver
+                    ? input[colIdx]
+                    : '');
               const feedback = feedbacks[rowIdx]?.[colIdx] || 'absent';
               const bg =
                 rowIdx < guesses.length
